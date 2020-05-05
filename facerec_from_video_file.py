@@ -1,5 +1,7 @@
 import face_recognition
 import cv2
+import threading
+from queue import Queue
 import sys
 
 # This is a demo of running face recognition on a video file and saving the results to a new video file.
@@ -9,17 +11,17 @@ import sys
 # specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
 
 
-def main(argv):
+def main(in_queue, out_queue, input_movie, length, face_image, face_name):
     # Open the input movie file
-    input_movie = cv2.VideoCapture(argv[0])
-    length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
+    # input_movie = cv2.VideoCapture(argv[0])
+    # length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # Create an output movie file (make sure resolution/frame rate matches input video!)
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    output_movie = cv2.VideoWriter('output.avi', fourcc, 30, (640, 360))
+    # fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    # output_movie = cv2.VideoWriter('output.avi', fourcc, 30, (640, 360))
 
     # Load some sample pictures and learn how to recognize them.
-    face_image = face_recognition.load_image_file(argv[1])
+    # face_image = face_recognition.load_image_file(argv[1])
     my_face_encoding = face_recognition.face_encodings(face_image)[0]
 
     known_faces = [
@@ -33,6 +35,8 @@ def main(argv):
     frame_number = 0
 
     while True:
+        item = in_queue.get()
+        result = item
         # Grab a single frame of video
         ret, frame = input_movie.read()
         frame_number += 1
@@ -57,7 +61,7 @@ def main(argv):
             # but I kept it simple for the demo
             name = None
             if match[0]:
-                name = argv[1].split('.')[0]
+                name = face_name
 
             face_names.append(name)
 
@@ -85,4 +89,32 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    # main(sys.argv[1:])
+    work = Queue()
+    results = Queue()
+    input_movie = cv2.VideoCapture(sys.argv[0])
+    length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
+    face_image = face_recognition.load_image_file(sys.argv[1])
+    face_name = sys.argv[2]
+
+    # Create an output movie file (make sure resolution/frame rate matches input video!)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    output_movie = cv2.VideoWriter('output.avi', fourcc, 30, (640, 360))
+
+    # start for workers
+    for i in range(4):
+        t = threading.Thread(target=main, args=(work, results, input_movie, length,  face_image, face_name))
+        t.daemon = True
+        t.start()
+
+    # produce data
+    for i in range(length):
+        work.put(i)
+
+    work.join()
+
+    # get the results
+    for i in range(length):
+        print(results.get())
+
+    sys.exit()

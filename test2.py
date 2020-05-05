@@ -81,6 +81,7 @@ def process(output_video, frame_start, frame_end):
         # Write the resulting image to the output video file
         print("Writing frame {} / {}".format(frame_number, length))
         output_movie.write(frame)
+        sleep(0.2)
         if frame_start == frame_end:
             break
 
@@ -89,15 +90,10 @@ if __name__ == "__main__":
     FRAME_QUEUE = Queue()
     RESULT_QUEUE = Queue()
     video_part = int(length/4)
-    thread1 = Thread(target=process, args=('out1.avi', video_part, 0))
-    thread2 = Thread(target=process, args=('out2.avi', video_part*2, video_part))
-    thread3 = Thread(target=process, args=('out3.avi', video_part*3, video_part*2))
-    thread4 = Thread(target=process, args=('out4.avi', int(length), video_part*3))
-
-    thread1.daemon = True
-    thread2.daemon = True
-    thread3.daemon = True
-    thread4.daemon = True
+    thread1 = Thread(target=process, args=('out1.avi', video_part, 0), daemon=True)
+    thread2 = Thread(target=process, args=('out2.avi', video_part*2, video_part), daemon=True)
+    thread3 = Thread(target=process, args=('out3.avi', video_part*3, video_part*2), daemon=True)
+    thread4 = Thread(target=process, args=('out4.avi', int(length), video_part*3), daemon=True)
 
     thread1.start()
     thread2.start()
