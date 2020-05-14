@@ -92,10 +92,10 @@ if __name__ == "__main__":
     # main(sys.argv[1:])
     work = Queue()
     results = Queue()
-    input_movie = cv2.VideoCapture(sys.argv[0])
+    input_movie = cv2.VideoCapture(sys.argv[1])
     length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
-    face_image = face_recognition.load_image_file(sys.argv[1])
-    face_name = sys.argv[2]
+    face_image = face_recognition.load_image_file(sys.argv[2])
+    face_name = sys.argv[3]
 
     # Create an output movie file (make sure resolution/frame rate matches input video!)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
