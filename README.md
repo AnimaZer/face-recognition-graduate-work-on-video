@@ -2,7 +2,6 @@
 
 Установка:
 1. установить библиотеку face_recognition
-2. pip install opencv-python
-3. pip install numpy
-4. pip install threading
-5. pip install multiprocessing
+2. pip install open-cv
+3. pip install threading
+4. pip install multiprocessing
