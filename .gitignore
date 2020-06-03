@@ -1,2 +1,6 @@
 .idea/
 *.avi
+facerec_from_video_file.py
+output4.avi
+test_scene_render.py
+video.py

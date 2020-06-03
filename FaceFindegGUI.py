@@ -1,21 +1,37 @@
+import PySimpleGUI as sg
 import face_recognition as fc
 import cv2
 from multiprocessing import Process, cpu_count
-import sys, os, datetime
+import time, os, datetime
 
-INPUT_VIDEO = sys.argv[1]  # input video
-INPUT_IMAGE = sys.argv[2]  # input image
-INPUT_NAME = sys.argv[3]  # input name
 
-# Create an output movie file (make sure resolution/frame rate matches input video!)
-# fourcc = cv2.VideoWriter_fourcc(*'XVID')
-# output_movie = cv2.VideoWriter('output.avi', fourcc, 29.97, (640, 360))
+def image_output(folder):
+    images_list = os.listdir(folder)
+    print(images_list)
+    print(os.getcwd())
+    image_str = r''+folder+'/'+images_list[1]
 
-# Load some sample pictures and learn how to recognize them.
-input_image = fc.load_image_file(INPUT_IMAGE)
-input_face_encoding = fc.face_encodings(input_image)[0]
+    layout = [
+        [sg.Listbox(values=images_list, size=(20, 30), key='_LISTBOX_', select_mode='single'), sg.Image(r''+str(folder)+'/'+str(images_list[0]), key='show_img')],
+    ]
 
-known_faces = [input_face_encoding]
+    window = sg.Window('Face Finder', layout, size=(850, 400))
+    # sg.SetOptions(
+    #     scrollbar_color='#9FB8AD',
+    # )
+    while True:  # The Event Loop
+        event, values = window.read()
+        # print(event, values) #debug
+        if event in (None, 'Exit', 'Cancel'):
+            break
+        listimg = values['_LISTBOX_']
+        if event == '_LISTBOX_':
+            i = 2
+            print(values['_LISTBOX_'])
+            window['show_img'].update(filename=r''+str(folder)+'/'+str(images_list[i]))
+            # window.FindElement('show_img').Update(values=(r''+str(folder)+'/'+str(images_list[i])))
+            sg.Popup('Selected', values['_LISTBOX_'])
+
 
 def main(frame_start, frame_end):
     # Open the input movie file
@@ -121,12 +137,12 @@ def main(frame_start, frame_end):
             else:
                 path_hour_str = str(path_hour)
 
-            path = str(path_hour_str) + ':' + str(path_min_str) + ':' + str(path_sec_str) + '.jpg'
+            path = str(path_hour_str) + ':' + str(path_min_str) + ':' + str(path_sec_str) + '.png'
             path_min = 0
             path_hour = 0
             if name:
                 cv2.imwrite(os.path.join(INPUT_NAME, path), frame)
-                frame_number += 1
+                frame_number += 30
                 input_movie.set(1, frame_number)
 
     # All done!
@@ -135,25 +151,58 @@ def main(frame_start, frame_end):
 
 
 if __name__ == "__main__":
-    # Open the input movie file
-    input_movie = cv2.VideoCapture(INPUT_VIDEO)
-    length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
+    layout = [
+        [sg.Text('Name'), sg.InputText()],
+        [sg.Text('Image'), sg.InputText(), sg.FileBrowse(file_types=(('Image Files', '*.jpg *.png *.jpeg *.raw *.bmp'),))],
+        [sg.Text('Video'), sg.InputText(), sg.FileBrowse(file_types=(('Video Files', '*.mp4 *.avi *.mkv'),))],
+        [sg.Submit(), sg.Cancel()]
+    ]
+    window = sg.Window('Face Finder', layout)
+    while True:  # The Event Loop
+        event, values = window.read()
+        # print(event, values) #debug
+        if event in (None, 'Exit', 'Cancel'):
+            break
+        if event == 'Submit' and values[0] and values[1] and values[2]:
+            file1 = file2 = isitago = None
 
-    if not os.path.exists(INPUT_NAME):
-        os.mkdir(INPUT_NAME)
+            INPUT_NAME = ("_".join(values[0].split()))
+            INPUT_IMAGE = values[1]
+            INPUT_VIDEO = values[2]
+            sg.popup('Please wait, video processing has begun', str(datetime.datetime.now()))
+            sg.PopupAnimated(sg.DEFAULT_BASE64_LOADING_GIF, time_between_frames=30)
 
-    process_list = []
-    part = int(length / (cpu_count() - 1))
-    begin_run = 0
-    end_run = int(length / (cpu_count() - 1))
-    for i in range(1, cpu_count()):
-        p = Process(target=main, args=(begin_run, end_run))
-        process_list.append(p)
-        p.start()
-        print(str(i)+';'+str(end_run)+';'+str(begin_run))
-        print(str(datetime.datetime.now()))
-        end_run = int(part * int(i+1))
-        begin_run = int(part * i)
+            # # Load some sample pictures and learn how to recognize them.
+            # input_image = fc.load_image_file(INPUT_IMAGE)
+            # input_face_encoding = fc.face_encodings(input_image)[0]
+            #
+            # known_faces = [input_face_encoding]
+            # # Open the input movie file
+            # input_movie = cv2.VideoCapture(INPUT_VIDEO)
+            # length = int(input_movie.get(cv2.CAP_PROP_FRAME_COUNT))
+            #
+            # if not os.path.exists(INPUT_NAME):
+            #     os.mkdir(INPUT_NAME)
+            #
+            # process_list = []
+            # part = int(length / (cpu_count() - 1))
+            # begin_run = 0
+            # end_run = int(length / (cpu_count() - 1))
+            # for i in range(1, cpu_count()):
+            #     p = Process(target=main, args=(begin_run, end_run))
+            #     process_list.append(p)
+            #     p.start()
+            #     print(str(i)+';'+str(end_run)+';'+str(begin_run))
+            #     print(str(datetime.datetime.now()))
+            #     end_run = int(part * int(i+1))
+            #     begin_run = int(part * i)
+            #
+            # for p in process_list:
+            #     p.join()
+            sg.popup_animated(None)
+            sg.popup('Processing completed', str(datetime.datetime.now()))
+            image_output(INPUT_NAME)
+            window.Close()
 
-    for p in process_list:
-        p.join()
+
+
